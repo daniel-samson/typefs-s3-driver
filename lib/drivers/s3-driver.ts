@@ -1,4 +1,5 @@
 import {
+  BucketItemStat,
   Client,
   CopyConditions,
 } from 'minio';
@@ -198,7 +199,7 @@ export class S3Driver extends DiskDriver {
           return;
         }
 
-        list.push(obj.name);
+        list.push(obj.name as string);
       });
       stream.on('error', (e: any) => reject(e));
       stream.on('end', () => resolve(list));
@@ -222,15 +223,9 @@ export class S3Driver extends DiskDriver {
         this.client.statObject(
           this.configuration.bucket,
           fileName,
-          (err: any) => {
-            if (err) {
-              resolve(false);
-              return;
-            }
-
-            resolve(true);
-          },
-        );
+        )
+          .then(() => resolve(true))
+          .catch(() => resolve(false));
       } catch (e) {
         resolve(false);
       }
@@ -244,15 +239,9 @@ export class S3Driver extends DiskDriver {
         this.client.statObject(
           this.configuration.bucket,
           fileName,
-          (err: any, s) => {
-            if (err) {
-              reject(err);
-              return;
-            }
-
-            resolve(s.lastModified);
-          },
-        );
+        ).then((s: BucketItemStat) => {
+          resolve(s.lastModified);
+        }).catch(reject);
       } catch (e) {
         reject(e);
       }
@@ -266,15 +255,10 @@ export class S3Driver extends DiskDriver {
         this.client.statObject(
           this.configuration.bucket,
           fileName,
-          (err: any, s) => {
-            if (err) {
-              reject(err);
-              return;
-            }
-
+        )
+          .then((s: BucketItemStat) => {
             resolve(s.size);
-          },
-        );
+          }).catch(reject);
       } catch (e) {
         reject(e);
       }
